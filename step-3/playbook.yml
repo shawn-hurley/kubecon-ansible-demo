@@ -1,14 +1,11 @@
 ---
 - hosts: localhost
   tasks:
-  - name: Create webapp CRD
+  - name: Create webapp CRs
     k8s:
-      state: "{{ state | default('present') }}"
-      definition:
-        kind: WebApp
-        apiVersion: app.example.com/v1alpha1
-        metadata:
-          name: test
-          namespace: default
-        spec:
-          key: value
+      definition: "{{ lookup('template', 'webapp.template.yaml') | from_yaml }}"
+    loop:
+      - test
+      - test-2
+    loop_control:
+      loop_var: name

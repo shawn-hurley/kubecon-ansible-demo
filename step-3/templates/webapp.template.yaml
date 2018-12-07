@@ -1,0 +1,9 @@
+---
+        kind: WebApp
+        apiVersion: app.example.com/v1alpha1
+        metadata:
+          name: {{ name }}
+          namespace: default
+        spec:
+          key: value
+
