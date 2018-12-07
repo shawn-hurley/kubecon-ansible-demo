@@ -1,0 +1,82 @@
+---
+- hosts: localhost
+  tasks:
+  - name: start memcached deployment
+    when: ('apps.openshift.io' not in lookup('k8s', cluster_info='api_groups'))
+    k8s:
+      state: "{{ state | default('present') }}"
+      definition:
+        kind: Deployment
+        apiVersion: apps/v1
+        metadata:
+          name: test
+          namespace: default
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: memcached
+          template:
+            metadata:
+              labels:
+                app: memcached
+            spec:
+              containers:
+              - name: memcached
+                command:
+                - memcached
+                - -m=64
+                - -o
+                - modern
+                - -v
+                image: "memcached:1.4.36-alpine"
+                ports:
+                  - containerPort: 11211
+  - name: start memcached deployment config
+    when: ('apps.openshift.io' in lookup('k8s', cluster_info='api_groups'))
+    k8s:
+      state: "{{ state | default('present') }}"
+      definition:
+        kind: DeploymentConfig
+        apiVersion: apps.openshift.io/v1
+        metadata:
+          name: test
+          namespace: default
+        spec:
+          replicas: 1
+          strategy:
+            type: "Rolling"
+          template:
+            metadata:
+              labels:
+                app: memcached
+            spec:
+              containers:
+              - name: memcached
+                command:
+                - memcached
+                - -m=64
+                - -o
+                - modern
+                - -v
+                image: "memcached:1.4.36-alpine"
+                ports:
+                  - containerPort: 11211
+  - name: create service
+    k8s:
+      state: "{{ state | default('present') }}"
+      definition:
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: test
+          namespace: default
+          labels:
+            app: memcached
+        spec:
+          type: NodePort
+          ports:
+            - port: 11211
+              nodePort: 30080
+          selector:
+            app: memcached
